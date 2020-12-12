@@ -27,3 +27,10 @@ cd cmake-build
 cmake .. -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=/usr/local/poco-1.10.1
 cmake --build . --target install
 ```
+
+## Build LTA
+
+```bash
+cd src
+make
+```
