@@ -159,8 +159,5 @@ std::string Core::call(std::string& action, Json::Value& payload) {
     Json::Value response;
 
     if (postToCore(action, payload, &response)) {
-
     }
-
-
 }

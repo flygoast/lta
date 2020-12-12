@@ -1,9 +1,14 @@
+LUA_PATH = /usr/local/lua-5.1.5
+LUA_INCLUDE_PATH = $(LUA_PATH)/include
+LUA_LIBS_PATH = $(LUA_PATH)/lib
 
-POCO_PATH = /usr/local/poco-1.4.6.4
-INCLUDE_PATH = $(POCO_PATH)/include
-LIBS_PATH = $(POCO_PATH)/lib
-CXXFLAGS = -I$(INCLUDE_PATH) -I/usr/local/include -std=c++11 -g
-LDFLAGS += -L$(LIBS_PATH) -L/usr/local/lib -lpthread -ldl
+POCO_PATH = /usr/local/poco-1.10.1
+POCO_INCLUDE_PATH = $(POCO_PATH)/include
+POCO_LIBS_PATH = $(POCO_PATH)/lib
+
+#CXXFLAGS = -I$(LUA_INCLUDE_PATH) -I$(POCO_INCLUDE_PATH) -std=c++11 -g
+CXXFLAGS = -I$(LUA_INCLUDE_PATH) -I$(POCO_INCLUDE_PATH) -g
+LDFLAGS += -L$(LUA_LIBS_PATH) -L$(POCO_LIBS_PATH) -lpthread -ldl
 
 #============================================
 # The order of the libraries MATERS!!!
@@ -14,5 +19,5 @@ lta: jsoncpp.o main.o Application.o MainLoop.o Monitor.o Facts.o Lua.o GenericTa
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 clean:
-	rm *.o lta
+	rm -f *.o lta
 

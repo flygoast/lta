@@ -33,7 +33,8 @@ void Facts::Task::run(void) {
 
     app.logger().debug("Facts content: " + json_string);
 
-    Core::call("facts", json_string);
+    std::string facts = "facts";
+    Core::call(facts, json_string);
 }
 
 void Facts::schedule(void) {

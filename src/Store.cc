@@ -1,5 +1,6 @@
 #include "Store.h"
 
+using namespace Poco::Data::Keywords;
 using Poco::Data::Statement;
 using Poco::Data::Session;
 
@@ -33,21 +34,21 @@ void Store::getAgentInfo(Store::AgentInfo& ai) {
 
     Session *pSession = db.session();
     *pSession << "select agent_id, passphrase, grid, tag, proxy_host, proxy_port, proxy_user, proxy_password, server_label, dns, read_only, enable_log_rotation, max_log_size, max_log_files from agent_info limit 1",
-        Poco::Data::into(ai.agent_id),
-        Poco::Data::into(ai.passphrase),
-        Poco::Data::into(ai.grid),
-        Poco::Data::into(ai.tag),
-        Poco::Data::into(ai.proxy_host),
-        Poco::Data::into(ai.proxy_port),
-        Poco::Data::into(ai.proxy_user),
-        Poco::Data::into(ai.proxy_password),
-        Poco::Data::into(ai.server_label),
-        Poco::Data::into(ai.dns),
-        Poco::Data::into(ai.read_only),
-        Poco::Data::into(ai.enable_log_rotation),
-        Poco::Data::into(ai.max_log_size),
-        Poco::Data::into(ai.max_log_files),
-        Poco::Data::now;
+        into(ai.agent_id),
+        into(ai.passphrase),
+        into(ai.grid),
+        into(ai.tag),
+        into(ai.proxy_host),
+        into(ai.proxy_port),
+        into(ai.proxy_user),
+        into(ai.proxy_password),
+        into(ai.server_label),
+        into(ai.dns),
+        into(ai.read_only),
+        into(ai.enable_log_rotation),
+        into(ai.max_log_size),
+        into(ai.max_log_files),
+        now;
 
     db.mutex.unlock();
 }
@@ -58,27 +59,27 @@ void Store::setAgentInfo(Store::AgentInfo& ai) {
 
     Session *pSession = db.session();
 
-    *pSession << "delete from agent_info", Poco::Data::now;
+    *pSession << "delete from agent_info", now;
 
     Statement statement(*pSession);
 
     statement << "insert into agent_info(agent_id, passphrase, grid, tag, proxy_host, proxy_port, proxy_user, proxy_password, server_label, dns, read_only, enable_log_rotation, max_log_size, max_log_files) values "
         "(:agent_id, :passphrase, :grid, :tag, :proxy_host, :proxy_port, :proxy_user, :proxy_password, :server_label, :dns, :read_only, :enable_log_rotation, :max_log_size, :max_log_files)",
-        Poco::Data::use(ai.agent_id),
-        Poco::Data::use(ai.passphrase),
-        Poco::Data::use(ai.grid),
-        Poco::Data::use(ai.tag),
-        Poco::Data::use(ai.proxy_host),
-        Poco::Data::use(ai.proxy_port),
-        Poco::Data::use(ai.proxy_user),
-        Poco::Data::use(ai.proxy_password),
-        Poco::Data::use(ai.server_label),
-        Poco::Data::use(ai.dns),
-        Poco::Data::use(ai.read_only),
-        Poco::Data::use(ai.enable_log_rotation),
-        Poco::Data::use(ai.max_log_size),
-        Poco::Data::use(ai.max_log_files),
-        Poco::Data::now;
+        use(ai.agent_id),
+        use(ai.passphrase),
+        use(ai.grid),
+        use(ai.tag),
+        use(ai.proxy_host),
+        use(ai.proxy_port),
+        use(ai.proxy_user),
+        use(ai.proxy_password),
+        use(ai.server_label),
+        use(ai.dns),
+        use(ai.read_only),
+        use(ai.enable_log_rotation),
+        use(ai.max_log_size),
+        use(ai.max_log_files),
+        now;
 
     db.mutex.unlock();
 }
@@ -94,7 +95,7 @@ void Store::closeSession(void) {
 void Store::deleteExpireRestartKeys(void) {
     db.mutex.lock();
     Session *pSession = db.session();
-    *pSession << "delete from key_value_pairs where expires = 'restart'", Poco::Data::now;
+    *pSession << "delete from key_value_pairs where expires = 'restart'", now;
     db.mutex.unlock();
 
     deleteExpireKeys();
@@ -104,7 +105,7 @@ void Store::deleteExpireRestartKeys(void) {
 void Store::deleteExpireKeys(void) {
     db.mutex.lock();
     Session *pSession = db.session();
-    *pSession << "delete from key_value_pairs where datetime(expires) <= datetime('now')", Poco::Data::now;
+    *pSession << "delete from key_value_pairs where datetime(expires) <= datetime('now')", now;
 
     db.mutex.unlock();
 }
