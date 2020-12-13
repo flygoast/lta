@@ -123,7 +123,7 @@ void Store::saveMessage(const std::string& action, const Json::Value& value) {
 
     std::string a = action;
     std::string j = jsonstr;
-    statement << "insert into message(target, payload) values(:target, :payload)",
+    statement << "insert into messages(target, payload) values(:target, :payload)",
         use(a),
         use(j),
         now;

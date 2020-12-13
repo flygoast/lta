@@ -5,6 +5,7 @@
 #include "Poco/Net/HTTPClientSession.h"
 #include "Poco/Net/HTTPRequest.h"
 #include "Poco/Net/HTTPResponse.h"
+#include "Poco/Exception.h"
 
 #include "Application.h"
 #include "Store.h"
@@ -17,6 +18,7 @@ using Poco::DeflatingOutputStream;
 using Poco::DeflatingStreamBuf;
 using Poco::StreamCopier;
 using Poco::URI;
+using Poco::Exception;
 using Poco::Net::HTTPRequest;
 using Poco::Net::HTTPResponse;
 using Poco::InflatingInputStream;
@@ -60,23 +62,32 @@ void Core::CoreForm::init() {
 Core::CoreForm::CoreForm(Json::Value payload) {
     init();
 
-    if (payload.empty()) {
-        Json::StreamWriterBuilder builder;
-        builder.settings_["indentation"] = "";
-        const std::string s = Json::writeString(builder, payload);
+    LTE::Application& app = dynamic_cast<LTE::Application&>(Poco::Util::Application::instance());
 
-        if (s.length() <= 2000) {
-            set("compressed", "false");
-            set("payload", payload.asString());
-        } else {
-            std::istringstream is(payload.asString());
-            std::ostringstream os;
-            DeflatingOutputStream deflater(os, DeflatingStreamBuf::STREAM_GZIP);
-            StreamCopier::copyStream(is, deflater, 2000);
-            deflater.close();
+    if (!payload.empty()) {
 
-            set("payload", os.str());
-            set("compressed", "true");
+
+        try {
+            Json::StreamWriterBuilder builder;
+            builder.settings_["indentation"] = "";
+            const std::string s = Json::writeString(builder, payload);
+    
+
+            if (s.length() <= 2000) {
+                set("compressed", "false");
+                set("payload", s);
+            } else {
+                std::istringstream is(s);
+                std::ostringstream os;
+                DeflatingOutputStream deflater(os, DeflatingStreamBuf::STREAM_GZIP);
+                StreamCopier::copyStream(is, deflater, 2000);
+                deflater.close();
+    
+                set("payload", os.str());
+                set("compressed", "true");
+            }
+        } catch (Exception &ex) {
+            poco_error_f1(app.logger(), "CoreForm failed: %s", ex.displayText());
         }
     }
 }
@@ -93,68 +104,68 @@ bool Core::postToCore(std::string& action, Core::CoreForm& form, std::string &re
 
     poco_information_f1(app.logger(), "Calling core with action: %s", action);
 
-    std::string grid;
-    if (app.config().has("grid")) {
-        grid = app.config().getString("grid");
-    } else {
-        grid = "http://localhost/grid";
-    }
+    bool result = false;
 
-    Poco::URI uri(grid);
-
-    if (!(uri.getScheme() == "http")) {
-        // TODO TLS
-    }
-
-    Store::AgentInfo ai;
-    Store::getAgentInfo(ai);
-
-
-    // TODO DNS cache
-
-    if (app.config().has("no-grid-ssl-verification")) {
-        // TODO
-    }
-
-
-    poco_error(app.logger(), "XXXXXXXXXXXXXXXX");
-
-    Poco::Net::HTTPClientSession session(uri.getHost(), uri.getPort());
-    Poco::Net::HTTPRequest req(Poco::Net::HTTPRequest::HTTP_POST, uri.getPath(), Poco::Net::HTTPMessage::HTTP_1_1);
-    req.set("UserAgent", "LTE/" VERSION_STRING);
-    req.set("X-LTE-AGENT-ID", ai.agent_id);
-
-    poco_error(app.logger(), "YYYYYYYYYYYYYYYYYYY");
-
-    form.prepareSubmit(req);
-    std::ostream& ostr = session.sendRequest(req);
-    form.write(ostr);
-
-    poco_error(app.logger(), "ZZZZZZZZZZZZZZZZZZZZ");
-    Poco::Timestamp ts;
-    connect_timestamp = ts;
-
-    Poco::Net::HTTPResponse res;
-    std::istream& rs = session.receiveResponse(res);
-
-    Poco::Timestamp ts2;
-    connect_timestamp = ts2;
-
-    poco_error_f1(app.logger(), "Calling core with response: %d", res.getStatus());
-
-    if (res.getStatus() == Poco::Net::HTTPResponse::HTTP_OK) {
-        if (res.get("Content-Encoding", "") == "gzip") {
-            InflatingInputStream inflater(rs, InflatingStreamBuf::STREAM_GZIP);
-            Poco::StreamCopier::copyToString(inflater, resp_string);
+    try {
+        std::string grid;
+        if (app.config().has("grid")) {
+            grid = app.config().getString("grid");
+        } else {
+            grid = "http://localhost/grid";
         }
-    } else {
-        poco_error_f1(app.logger(), "Calling core with response: %d", res.getStatus());
-    }
+    
+        Poco::URI uri(grid);
+    
+        if (!(uri.getScheme() == "http")) {
+            // TODO TLS
+        }
+    
+        Store::AgentInfo ai;
+        Store::getAgentInfo(ai);
+    
+    
+        // TODO DNS cache
+    
+        if (app.config().has("no-grid-ssl-verification")) {
+            // TODO
+        }
+    
+        Poco::Net::HTTPClientSession session(uri.getHost(), uri.getPort());
+        Poco::Net::HTTPRequest req(Poco::Net::HTTPRequest::HTTP_POST, uri.getPath(), Poco::Net::HTTPMessage::HTTP_1_1);
+        req.set("UserAgent", "LTE/" VERSION_STRING);
+        req.set("X-LTE-AGENT-ID", ai.agent_id);
 
+        form.prepareSubmit(req);
+        std::ostream& ostr = session.sendRequest(req);
+        form.write(ostr);
+    
+        Poco::Timestamp ts;
+        connect_timestamp = ts;
+    
+        Poco::Net::HTTPResponse res;
+        std::istream& rs = session.receiveResponse(res);
+    
+        Poco::Timestamp ts2;
+        connect_timestamp = ts2;
+    
+        if (res.getStatus() == Poco::Net::HTTPResponse::HTTP_OK) {
+            if (res.get("Content-Encoding", "") == "gzip") {
+                InflatingInputStream inflater(rs, InflatingStreamBuf::STREAM_GZIP);
+                Poco::StreamCopier::copyToString(inflater, resp_string);
+            }
+            result = true;
+        } else {
+            poco_error_f1(app.logger(), "Calling core with response: %d", (int)res.getStatus());
+            result = false;
+        }
+    } catch (Exception &ex) {
+        poco_error_f1(app.logger(), "Calling core failed: %s", ex.displayText());
+        result = false;
+    }
 
     post_to_core_mutex.unlock();
 
-    return true;
+    return result;
 }
 
 bool Core::postToCore(std::string& action, std::string& payload) {
@@ -193,7 +204,7 @@ void Core::call(std::string& action, Json::Value payload) {
     payload["created_at"] = Utils::utcNowStr();
 
     if (!postToCore(action, payload, response)) {
-        poco_error_f1(app.logger(), "save message for action: '%s'", action);
+        poco_information_f1(app.logger(), "save message for action: '%s'", action);
         Store::saveMessage(action, payload);
     }
 }
