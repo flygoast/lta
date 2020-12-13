@@ -10,6 +10,7 @@
 #include "Store.h"
 #include "Core.h"
 #include "Version.h"
+#include "Utils.h"
 
 using Poco::Mutex;
 using Poco::DeflatingOutputStream;
@@ -174,12 +175,38 @@ bool Core::postToCore(std::string& action, const Json::Value& payload, Json::Val
 }
 
 
-void Core::call(std::string& action, const Json::Value& payload) {
+void Core::call(std::string& action, Json::Value payload) {
     Json::Value response;
     LTE::Application& app = dynamic_cast<LTE::Application&>(Poco::Util::Application::instance());
+
+    payload["created_at"] = Utils::utcNowStr();
 
     if (!postToCore(action, payload, response)) {
         poco_error_f1(app.logger(), "save message for action: '%s'", action);
         Store::saveMessage(action, payload);
     }
+}
+
+
+void Core::event(const std::string& type, const std::string& message, const std::string& detail) {
+    Json::Value root;
+
+    root["type"] = type;
+    root["message"] = message;
+    root["detail"] = detail;
+
+    std::string action = "event";
+    call(action, root);
+}
+
+void Core::warn(const std::string& message, const std::string& detail) {
+    std::string type = "warn";
+
+    event(type, message, detail);
+}
+
+void Core::error(const std::string& message, const std::string& detail) {
+    std::string type = "error";
+
+    event(type, message, detail);
 }

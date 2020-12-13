@@ -25,7 +25,6 @@ void Facts::Task::run(void) {
     root["firewall_present"] = Utils::firewallPresent();
     root["os_display_name"] = Utils::osDisplayName();
     root["machine"] = Utils::machine();
-    root["created_at"] = Utils::utcNowStr();
 
     std::string facts = "facts";
 

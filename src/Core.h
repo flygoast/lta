@@ -25,7 +25,10 @@ public:
     };
 
     static bool stalled(); 
-    static void call(std::string& action, const Json::Value& payload);
+    static void error(const std::string& message, const std::string& detail);
+    static void warn(const std::string& message, const std::string& detail);
+    static void event(const std::string& type, const std::string& message, const std::string& detail);
+    static void call(std::string& action, Json::Value payload);
     static bool postToCore(std::string& action, Core::CoreForm& form, std::string &resp_string);
     static bool postToCore(std::string& action, const Json::Value& payload, Json::Value& response);
     static bool postToCore(std::string& action, std::string& payload);
