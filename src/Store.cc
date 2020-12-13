@@ -109,3 +109,24 @@ void Store::deleteExpireKeys(void) {
 
     db.mutex.unlock();
 }
+
+void Store::saveMessage(const std::string& action, const Json::Value& value) {
+    Json::StreamWriterBuilder builder;
+    builder.settings_["indentation"] = "";
+    const std::string jsonstr = Json::writeString(builder, value);
+
+    db.mutex.lock();
+
+    Session *pSession = db.session();
+
+    Statement statement(*pSession);
+
+    std::string a = action;
+    std::string j = jsonstr;
+    statement << "insert into message(target, payload) values(:target, :payload)",
+        use(a),
+        use(j),
+        now;
+
+    db.mutex.unlock();
+}

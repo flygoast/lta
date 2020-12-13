@@ -27,14 +27,9 @@ void Facts::Task::run(void) {
     root["machine"] = Utils::machine();
     root["created_at"] = Utils::utcNowStr();
 
-    Json::StreamWriterBuilder builder;
-    builder.settings_["indentation"] = "";
-    const std::string json_string = Json::writeString(builder, root);
-
-    app.logger().debug("Facts content: " + json_string);
-
     std::string facts = "facts";
-    Core::call(facts, json_string);
+
+    Core::call(facts, root);
 }
 
 void Facts::schedule(void) {

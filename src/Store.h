@@ -3,6 +3,8 @@
 
 #include "Poco/Mutex.h"
 
+#include "json/json.h"
+
 #include "DatabaseManager.h"
 
 
@@ -37,6 +39,7 @@ public:
     static void setAgentInfo(Store::AgentInfo& ai);
     static void deleteExpireRestartKeys();
     static void deleteExpireKeys();
+    static void saveMessage(const std::string& action, const Json::Value& value);
 
 private:
     static DatabaseManager  db;

@@ -72,7 +72,7 @@ void LTE::Application::initialize(Poco::Util::Application& self) {
 
     if (file.exists() && file.isFile()) {
         loadConfiguration(filePath);
-        file.remove();
+//        file.remove();
     }
 
     close(3);

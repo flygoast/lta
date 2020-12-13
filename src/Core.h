@@ -25,11 +25,10 @@ public:
     };
 
     static bool stalled(); 
-    static std::string call(std::string& action, Json::Value& payload);
-    static std::string postToCore(std::string& action);
-    static bool postToCore(std::string& action, Core::CoreForm& form, std::string *resp_string);
-    static std::string postToCore(std::string& action, std::string& payload);
-    static std::string postToCore(std::string& action, CoreForm& form);
+    static void call(std::string& action, const Json::Value& payload);
+    static bool postToCore(std::string& action, Core::CoreForm& form, std::string &resp_string);
+    static bool postToCore(std::string& action, const Json::Value& payload, Json::Value& response);
+    static bool postToCore(std::string& action, std::string& payload);
 
     static Poco::Mutex connect_mutex;
     static Poco::Mutex post_to_core_mutex;

@@ -42,6 +42,9 @@ void Core::CoreForm::init() {
     Store::AgentInfo ai;
     Store::getAgentInfo(ai);
 
+    LTE::Application& app = dynamic_cast<LTE::Application&>(Poco::Util::Application::instance());
+    poco_debug(app.logger(), "CoreForm::init");
+
     if (ai.passphrase.size() > 0) {
         set("id", ai.agent_id);
         payload_key = ai.passphrase;
@@ -83,7 +86,7 @@ Core::CoreForm::CoreForm(void) {
 }
 
 
-bool Core::postToCore(std::string& action, Core::CoreForm& form, std::string *resp_string) {
+bool Core::postToCore(std::string& action, Core::CoreForm& form, std::string &resp_string) {
     post_to_core_mutex.lock();
     LTE::Application& app = dynamic_cast<LTE::Application&>(Poco::Util::Application::instance());
 
@@ -133,7 +136,7 @@ bool Core::postToCore(std::string& action, Core::CoreForm& form, std::string *re
     if (res.getStatus() == Poco::Net::HTTPResponse::HTTP_OK) {
         if (res.get("Content-Encoding", "") == "gzip") {
             InflatingInputStream inflater(rs, InflatingStreamBuf::STREAM_GZIP);
-            Poco::StreamCopier::copyToString(inflater, *resp_string);
+            Poco::StreamCopier::copyToString(inflater, resp_string);
         }
     }
 
@@ -142,22 +145,41 @@ bool Core::postToCore(std::string& action, Core::CoreForm& form, std::string *re
     return true;
 }
 
-
-std::string Core::postToCore(std::string& action) {
-    CoreForm form;
-    return postToCore(action, form);
-}
-
-std::string Core::postToCore(std::string& action, std::string& payload) {
+bool Core::postToCore(std::string& action, std::string& payload) {
+    std::string response;
     CoreForm form(payload);
-    return postToCore(action, form);
+    return postToCore(action, form, response);
+}
+
+bool Core::postToCore(std::string& action, const Json::Value& payload, Json::Value& response) {
+    LTE::Application& app = dynamic_cast<LTE::Application&>(Poco::Util::Application::instance());
+
+    CoreForm form(payload);
+
+    std::string rawresp;
+
+    bool r = postToCore(action, form, rawresp);
+    if (r) {
+        if (rawresp.compare("") != 0) {
+            std::string errmsg;
+            Json::CharReaderBuilder builder;
+            const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
+            r = reader->parse(rawresp.c_str(), rawresp.c_str() + rawresp.length(), &response, &errmsg);
+            if (!r) {
+                poco_error_f2(app.logger(), "JSON parse of payload '%s' failed: %s", rawresp, errmsg);
+            }
+        }
+    }
+    return r;
 }
 
 
-
-std::string Core::call(std::string& action, Json::Value& payload) {
+void Core::call(std::string& action, const Json::Value& payload) {
     Json::Value response;
+    LTE::Application& app = dynamic_cast<LTE::Application&>(Poco::Util::Application::instance());
 
-    if (postToCore(action, payload, &response)) {
+    if (!postToCore(action, payload, response)) {
+        poco_error_f1(app.logger(), "save message for action: '%s'", action);
+        Store::saveMessage(action, payload);
     }
 }

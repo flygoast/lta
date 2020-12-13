@@ -16,7 +16,6 @@ public:
 
     static void schedule(void);
     static Timer facts_timer; // just declare
-
 };
 
 #endif /* __FACTS_H__ */

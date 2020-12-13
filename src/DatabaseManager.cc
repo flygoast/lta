@@ -78,8 +78,6 @@ Session *DatabaseManager::session(void) {
             app.logger().error("Session failed");
         }
 
-        pSession->setProperty("maxRetryAttempts", 5);
-
         *pSession << "create table if not exists messages(id interger primary key, target text, payload text, created_at text)", now;
 
         *pSession << "create table if not exists agent_info(id integer primary key, agent_id text, passphrase text, grid text default null, tag text default null, "
