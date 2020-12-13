@@ -103,7 +103,7 @@ bool Core::postToCore(std::string& action, Core::CoreForm& form, std::string &re
     Poco::URI uri(grid);
 
     if (!(uri.getScheme() == "http")) {
-        // TODO
+        // TODO TLS
     }
 
     Store::AgentInfo ai;
@@ -116,15 +116,21 @@ bool Core::postToCore(std::string& action, Core::CoreForm& form, std::string &re
         // TODO
     }
 
+
+    poco_error(app.logger(), "XXXXXXXXXXXXXXXX");
+
     Poco::Net::HTTPClientSession session(uri.getHost(), uri.getPort());
     Poco::Net::HTTPRequest req(Poco::Net::HTTPRequest::HTTP_POST, uri.getPath(), Poco::Net::HTTPMessage::HTTP_1_1);
     req.set("UserAgent", "LTE/" VERSION_STRING);
     req.set("X-LTE-AGENT-ID", ai.agent_id);
 
+    poco_error(app.logger(), "YYYYYYYYYYYYYYYYYYY");
+
     form.prepareSubmit(req);
     std::ostream& ostr = session.sendRequest(req);
     form.write(ostr);
 
+    poco_error(app.logger(), "ZZZZZZZZZZZZZZZZZZZZ");
     Poco::Timestamp ts;
     connect_timestamp = ts;
 
@@ -134,12 +140,17 @@ bool Core::postToCore(std::string& action, Core::CoreForm& form, std::string &re
     Poco::Timestamp ts2;
     connect_timestamp = ts2;
 
+    poco_error_f1(app.logger(), "Calling core with response: %d", res.getStatus());
+
     if (res.getStatus() == Poco::Net::HTTPResponse::HTTP_OK) {
         if (res.get("Content-Encoding", "") == "gzip") {
             InflatingInputStream inflater(rs, InflatingStreamBuf::STREAM_GZIP);
             Poco::StreamCopier::copyToString(inflater, resp_string);
         }
+    } else {
+        poco_error_f1(app.logger(), "Calling core with response: %d", res.getStatus());
     }
+
 
     post_to_core_mutex.unlock();
 
